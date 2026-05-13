@@ -242,6 +242,10 @@ public partial class MainWindowViewModel : ViewModelBase
             BjMessage = $"Przegrałeś. (Ty: {pv}, Krupier: {dv})";
         else
             BjMessage = $"Remis! (Ty: {pv}, Krupier: {dv})";
+
+        if (!_game2History.ContainsKey(CurrentPlayerId))
+            _game2History[CurrentPlayerId] = new List<string>();
+        _game2History[CurrentPlayerId].Add(BjMessage);
     }
 
     private List<Card> GenerateBjDeck()
