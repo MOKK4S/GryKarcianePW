@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:gry.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="gry.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="GryKarcianePW - Projekt"
+        Width="600" Height="450">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <StackPanel IsVisible="{Binding IsStartMenuVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+            <TextBlock Text="MENU GŁÓWNE" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <Button Content="Dodaj gracza" Command="{Binding GoToAddPlayerCommand}" Width="200" HorizontalContentAlignment="Center"/>
+            <Button Content="Graj (Logowanie)" Command="{Binding GoToLoginCommand}" Width="200" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsAddPlayerVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
+            <TextBlock Text="DODAJ GRACZA" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="Wpisz ID (3-10 cyfr):" />
+            <TextBox Text="{Binding InputPlayerId}" Width="200"/>
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" HorizontalAlignment="Center"/>
+            <Button Content="Dodaj" Command="{Binding RegisterPlayerCommand}" Width="200" HorizontalContentAlignment="Center" Background="LightGreen"/>
+            <Button Content="Wróć" Command="{Binding GoToStartMenuCommand}" Width="200" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsLoginVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15">
+            <TextBlock Text="LOGOWANIE" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="Wpisz swoje ID:" />
+            <TextBox Text="{Binding InputPlayerId}" Width="200"/>
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" HorizontalAlignment="Center"/>
+            <Button Content="Zaloguj" Command="{Binding LoginPlayerCommand}" Width="200" HorizontalContentAlignment="Center" Background="LightBlue"/>
+            <Button Content="Wróć" Command="{Binding GoToStartMenuCommand}" Width="200" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsGamesMenuVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+            <TextBlock Text="WYBIERZ GRĘ" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding LobbyStats}" Foreground="Gold" FontSize="16" HorizontalAlignment="Center"/>
+            <Button Content="Higher Lower" Command="{Binding GoToHlMenuCommand}" Width="250" HorizontalContentAlignment="Center"/>
+            <Button Content="Gra 2 (W budowie)" Width="250" HorizontalContentAlignment="Center" IsEnabled="False"/>
+            <Button Content="Gra 3 (W budowie)" Width="250" HorizontalContentAlignment="Center" IsEnabled="False"/>
+            <Button Content="Wyloguj" Command="{Binding GoToStartMenuCommand}" Width="250" HorizontalContentAlignment="Center" Background="IndianRed"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsHlMenuVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+            <TextBlock Text="HIGHER LOWER" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <Button Content="Graj" Command="{Binding StartGameCommand}" Width="200" HorizontalContentAlignment="Center" Background="LightGreen"/>
+            <Button Content="Info" Command="{Binding GoToHlInfoCommand}" Width="200" HorizontalContentAlignment="Center" Background="LightBlue"/>
+            <Button Content="Wróć do Lobby" Command="{Binding GoToGamesMenuCommand}" Width="200" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsHlInfoVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15" MaxWidth="400">
+            <TextBlock Text="ZASADY GRY" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock TextWrapping="Wrap" Text="Mamy całą talię kart (52 sztuki). Zostaje wylosowana jedna karta na środek. Musisz ocenić, czy następna wylosowana karta z talii będzie większa, czy mniejsza. Wartości od najsłabszej: 2-10, Jopek, Dama, Król, As. Karta wyrzucona odpada z gry. Gra kończy się, gdy skończą się karty."/>
+            <Button Content="Zrozumiałem, wróć" Command="{Binding GoToHlMenuCommand}" Width="200" HorizontalContentAlignment="Center" Margin="0,20,0,0"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsHlGameVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+            <TextBlock Text="HIGHER LOWER" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            
+            <TextBlock Text="{Binding GameMessage}" HorizontalAlignment="Center" FontSize="16" Foreground="Orange"/>
+            
+            <Border Background="White" BorderBrush="Black" BorderThickness="2" CornerRadius="10" Width="120" Height="180" Margin="0,10">
+                <TextBlock Text="{Binding CurrentCardName}" Foreground="Black" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
+                <Button Content="Wyższa ▲" Command="{Binding GuessHigherCommand}" Width="100" HorizontalContentAlignment="Center" Background="ForestGreen" Foreground="White" IsEnabled="{Binding CardsLeft}"/>
+                <Button Content="Niższa ▼" Command="{Binding GuessLowerCommand}" Width="100" HorizontalContentAlignment="Center" Background="Firebrick" Foreground="White" IsEnabled="{Binding CardsLeft}"/>
+            </StackPanel>
+
+            <TextBlock Text="{Binding StringFormat='Pozostało kart: {0}', Path=CardsLeft}" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding StringFormat='Wynik: {0}/{1}', Path=CurrentScore, FallbackValue=0}" HorizontalAlignment="Center" FontSize="18" FontWeight="Bold"/>
+
+            <Button Content="Wyjdź do Menu" Command="{Binding GoToGamesMenuCommand}" Width="200" HorizontalContentAlignment="Center" Margin="0,20,0,0"/>
+        </StackPanel>
+
+    </Grid>
+</Window>
