@@ -17,6 +17,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isHlInfoVisible = false;
     [ObservableProperty] private bool _isHlGameVisible = false;
     [ObservableProperty] private bool _isHistoryVisible = false;
+    [ObservableProperty] private bool _isBlackjackMenuVisible = false;
+    [ObservableProperty] private bool _isBlackjackGameVisible = false;
 
     private HashSet<string> _registeredPlayers = new();
     private Dictionary<string, List<string>> _hlHistory = new();
@@ -56,6 +58,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoToHlInfo() { HideAll(); IsHlInfoVisible = true; }
+
+    [RelayCommand]
+    private void GoToBlackjackMenu() { HideAll(); IsBlackjackMenuVisible = true; }
 
     [RelayCommand]
     private void GoToHistory()
@@ -170,6 +175,8 @@ public partial class MainWindowViewModel : ViewModelBase
         IsHlInfoVisible = false;
         IsHlGameVisible = false;
         IsHistoryVisible = false;
+        IsBlackjackMenuVisible = false;
+        IsBlackjackGameVisible = false;
     }
 }
 
