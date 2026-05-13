@@ -82,21 +82,41 @@
             <Button Content="Wyjdź do Menu" Command="{Binding GoToGamesMenuCommand}" Width="200" HorizontalContentAlignment="Center"/>
         </StackPanel>
 
-        <StackPanel IsVisible="{Binding IsBlackjackGameVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="420">
+        <StackPanel IsVisible="{Binding IsBlackjackGameVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
             <TextBlock Text="BLACKJACK" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
             <TextBlock Text="Krupier:" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <Border Background="White" BorderBrush="DarkSlateGray" BorderThickness="2" CornerRadius="8" Padding="15,8" HorizontalAlignment="Center" MinWidth="280">
-                <TextBlock Text="{Binding DealerHandText}" HorizontalAlignment="Center" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/>
-            </Border>
+            <ItemsControl ItemsSource="{Binding BjDealerCards}" HorizontalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:Card">
+                        <Border Background="White" BorderBrush="Black" BorderThickness="2" CornerRadius="10" Width="80" Height="110">
+                            <TextBlock Text="{Binding Name}" Foreground="Black" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
             <TextBlock Text="Twoje karty:" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <Border Background="LightYellow" BorderBrush="DarkSlateGray" BorderThickness="2" CornerRadius="8" Padding="15,8" HorizontalAlignment="Center" MinWidth="280">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding PlayerHandText}" HorizontalAlignment="Center" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/>
-                    <TextBlock Text="{Binding StringFormat='Wartość: {0}', Path=PlayerHandValue}" HorizontalAlignment="Center" FontSize="12" Foreground="DimGray"/>
-                </StackPanel>
-            </Border>
+            <ItemsControl ItemsSource="{Binding BjPlayerCards}" HorizontalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:Card">
+                        <Border Background="White" BorderBrush="Black" BorderThickness="2" CornerRadius="10" Width="80" Height="110">
+                            <TextBlock Text="{Binding Name}" Foreground="Black" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding StringFormat='Wartość: {0}', Path=PlayerHandValue}" HorizontalAlignment="Center" FontSize="12" Foreground="DimGray"/>
 
             <TextBlock Text="{Binding BjMessage}" HorizontalAlignment="Center" FontSize="14" Foreground="Orange" TextWrapping="Wrap" TextAlignment="Center"/>
 

@@ -44,8 +44,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private List<Card> _bjDeck = new();
     private List<Card> _bjPlayerHand = new();
     private List<Card> _bjDealerHand = new();
-    [ObservableProperty] private string _playerHandText = "";
-    [ObservableProperty] private string _dealerHandText = "";
+    [ObservableProperty] private ObservableCollection<Card> _bjPlayerCards = new();
+    [ObservableProperty] private ObservableCollection<Card> _bjDealerCards = new();
     [ObservableProperty] private int _playerHandValue = 0;
     [ObservableProperty] private string _bjMessage = "";
     [ObservableProperty] private bool _bjCanAct = false;
@@ -281,11 +281,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void UpdateBjDisplay(bool hideDealer)
     {
-        PlayerHandText = string.Join(", ", _bjPlayerHand.Select(c => c.Name));
+        BjPlayerCards = new ObservableCollection<Card>(_bjPlayerHand);
         PlayerHandValue = GetHandValue(_bjPlayerHand);
-        DealerHandText = hideDealer && _bjDealerHand.Count > 0
-            ? _bjDealerHand[0].Name + ", ???"
-            : string.Join(", ", _bjDealerHand.Select(c => c.Name));
+        if (hideDealer && _bjDealerHand.Count > 0)
+            BjDealerCards = new ObservableCollection<Card>(new[] { _bjDealerHand[0], new Card { Name = "???", Value = 0 } });
+        else
+            BjDealerCards = new ObservableCollection<Card>(_bjDealerHand);
     }
 
     private void HideAll()
