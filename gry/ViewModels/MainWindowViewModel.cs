@@ -41,6 +41,16 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _gameMessage = "";
     private Card? _currentCard;
 
+    private List<Card> _bjDeck = new();
+    private List<Card> _bjPlayerHand = new();
+    private List<Card> _bjDealerHand = new();
+    [ObservableProperty] private string _playerHandText = "";
+    [ObservableProperty] private string _dealerHandText = "";
+    [ObservableProperty] private int _playerHandValue = 0;
+    [ObservableProperty] private string _bjMessage = "";
+    [ObservableProperty] private bool _bjCanAct = false;
+    [ObservableProperty] private bool _bjGameOver = false;
+
     [RelayCommand]
     private void GoToAddPlayer() { HideAll(); IsAddPlayerVisible = true; ErrorMessage = ""; InputPlayerId = ""; }
 
@@ -163,6 +173,115 @@ public partial class MainWindowViewModel : ViewModelBase
             CurrentCardName = _currentCard.Name;
             CardsLeft = _deck.Count;
         }
+    }
+
+    [RelayCommand]
+    private void StartBlackjack()
+    {
+        HideAll();
+        IsBlackjackGameVisible = true;
+        _bjDeck = GenerateBjDeck();
+        _bjPlayerHand.Clear();
+        _bjDealerHand.Clear();
+        _bjPlayerHand.Add(DrawBjCard());
+        _bjDealerHand.Add(DrawBjCard());
+        _bjPlayerHand.Add(DrawBjCard());
+        _bjDealerHand.Add(DrawBjCard());
+        BjGameOver = false;
+        BjCanAct = true;
+        UpdateBjDisplay(hideDealer: true);
+        if (GetHandValue(_bjPlayerHand) == 21)
+            BjStand();
+        else
+            BjMessage = "Hit (dobierz) czy Stand (zostań)?";
+    }
+
+    [RelayCommand]
+    private void BjHit()
+    {
+        _bjPlayerHand.Add(DrawBjCard());
+        int value = GetHandValue(_bjPlayerHand);
+        if (value > 21)
+        {
+            FinishBlackjack();
+        }
+        else if (value == 21)
+        {
+            BjStand();
+        }
+        else
+        {
+            UpdateBjDisplay(hideDealer: true);
+            BjMessage = "Hit (dobierz) czy Stand (zostań)?";
+        }
+    }
+
+    [RelayCommand]
+    private void BjStand()
+    {
+        BjCanAct = false;
+        while (GetHandValue(_bjDealerHand) < 17)
+            _bjDealerHand.Add(DrawBjCard());
+        FinishBlackjack();
+    }
+
+    private void FinishBlackjack()
+    {
+        BjCanAct = false;
+        BjGameOver = true;
+        UpdateBjDisplay(hideDealer: false);
+        int pv = GetHandValue(_bjPlayerHand);
+        int dv = GetHandValue(_bjDealerHand);
+        if (pv > 21)
+            BjMessage = $"Bust! Przegrałeś. (Ty: {pv}, Krupier: {dv})";
+        else if (dv > 21)
+            BjMessage = $"Krupier się spalił! Wygrałeś. (Ty: {pv}, Krupier: {dv})";
+        else if (pv > dv)
+            BjMessage = $"Wygrałeś! (Ty: {pv}, Krupier: {dv})";
+        else if (pv < dv)
+            BjMessage = $"Przegrałeś. (Ty: {pv}, Krupier: {dv})";
+        else
+            BjMessage = $"Remis! (Ty: {pv}, Krupier: {dv})";
+    }
+
+    private List<Card> GenerateBjDeck()
+    {
+        var deck = new List<Card>();
+        string[] suits = { "♥", "♦", "♣", "♠" };
+        string[] names = { "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jopek", "Dama", "Król", "As" };
+        for (int s = 0; s < 4; s++)
+            for (int n = 0; n < 13; n++)
+                deck.Add(new Card { Name = $"{names[n]} {suits[s]}", Value = n + 2 });
+        return deck.OrderBy(_ => Guid.NewGuid()).ToList();
+    }
+
+    private Card DrawBjCard()
+    {
+        var card = _bjDeck[0];
+        _bjDeck.RemoveAt(0);
+        return card;
+    }
+
+    private int GetHandValue(List<Card> hand)
+    {
+        int total = 0, aces = 0;
+        foreach (var card in hand)
+        {
+            if (card.Value >= 11 && card.Value <= 13) total += 10;
+            else if (card.Value == 14) { total += 11; aces++; }
+            else total += card.Value;
+        }
+        while (total > 21 && aces > 0) { total -= 10; aces--; }
+        return total;
+    }
+
+    private void UpdateBjDisplay(bool hideDealer)
+    {
+        PlayerHandText = string.Join(", ", _bjPlayerHand.Select(c => c.Name));
+        PlayerHandValue = GetHandValue(_bjPlayerHand);
+        DealerHandText = hideDealer && _bjDealerHand.Count > 0
+            ? _bjDealerHand[0].Name + ", ???"
+            : string.Join(", ", _bjDealerHand.Select(c => c.Name));
     }
 
     private void HideAll()
