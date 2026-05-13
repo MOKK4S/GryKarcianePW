@@ -7,8 +7,8 @@
         x:Class="gry.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="GryKarcianePW - Projekt"
-        Width="600" Height="450">
+        Title="GryKarcianePW"
+        Width="600" Height="500">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -41,10 +41,10 @@
 
         <StackPanel IsVisible="{Binding IsGamesMenuVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
             <TextBlock Text="WYBIERZ GRĘ" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <TextBlock Text="{Binding LobbyStats}" Foreground="Gold" FontSize="16" HorizontalAlignment="Center"/>
             <Button Content="Higher Lower" Command="{Binding GoToHlMenuCommand}" Width="250" HorizontalContentAlignment="Center"/>
-            <Button Content="Gra 2 (W budowie)" Width="250" HorizontalContentAlignment="Center" IsEnabled="False"/>
-            <Button Content="Gra 3 (W budowie)" Width="250" HorizontalContentAlignment="Center" IsEnabled="False"/>
+            <Button Content="Gra 2" Width="250" HorizontalContentAlignment="Center" IsEnabled="False"/>
+            <Button Content="Gra 3" Width="250" HorizontalContentAlignment="Center" IsEnabled="False"/>
+            <Button Content="Historia gier" Command="{Binding GoToHistoryCommand}" Width="250" HorizontalContentAlignment="Center" Background="Gray"/>
             <Button Content="Wyloguj" Command="{Binding GoToStartMenuCommand}" Width="250" HorizontalContentAlignment="Center" Background="IndianRed"/>
         </StackPanel>
 
@@ -58,28 +58,57 @@
         <StackPanel IsVisible="{Binding IsHlInfoVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="15" MaxWidth="400">
             <TextBlock Text="ZASADY GRY" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
             <TextBlock TextWrapping="Wrap" Text="Mamy całą talię kart (52 sztuki). Zostaje wylosowana jedna karta na środek. Musisz ocenić, czy następna wylosowana karta z talii będzie większa, czy mniejsza. Wartości od najsłabszej: 2-10, Jopek, Dama, Król, As. Karta wyrzucona odpada z gry. Gra kończy się, gdy skończą się karty."/>
-            <Button Content="Zrozumiałem, wróć" Command="{Binding GoToHlMenuCommand}" Width="200" HorizontalContentAlignment="Center" Margin="0,20,0,0"/>
+            <Button Content="Wróć" Command="{Binding GoToHlMenuCommand}" Width="200" HorizontalContentAlignment="Center" Margin="0,20,0,0"/>
         </StackPanel>
 
         <StackPanel IsVisible="{Binding IsHlGameVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
             <TextBlock Text="HIGHER LOWER" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
-            
             <TextBlock Text="{Binding GameMessage}" HorizontalAlignment="Center" FontSize="16" Foreground="Orange"/>
-            
-            <Border Background="White" BorderBrush="Black" BorderThickness="2" CornerRadius="10" Width="120" Height="180" Margin="0,10">
-                <TextBlock Text="{Binding CurrentCardName}" Foreground="Black" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+            <Border Background="White" BorderBrush="Black" BorderThickness="2" CornerRadius="10" Width="100" Height="140">
+                <TextBlock Text="{Binding CurrentCardName}" Foreground="Black" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
             </Border>
-
             <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
                 <Button Content="Wyższa ▲" Command="{Binding GuessHigherCommand}" Width="100" HorizontalContentAlignment="Center" Background="ForestGreen" Foreground="White" IsEnabled="{Binding CardsLeft}"/>
                 <Button Content="Niższa ▼" Command="{Binding GuessLowerCommand}" Width="100" HorizontalContentAlignment="Center" Background="Firebrick" Foreground="White" IsEnabled="{Binding CardsLeft}"/>
             </StackPanel>
-
             <TextBlock Text="{Binding StringFormat='Pozostało kart: {0}', Path=CardsLeft}" HorizontalAlignment="Center"/>
-            <TextBlock Text="{Binding StringFormat='Wynik: {0}/{1}', Path=CurrentScore, FallbackValue=0}" HorizontalAlignment="Center" FontSize="18" FontWeight="Bold"/>
-
-            <Button Content="Wyjdź do Menu" Command="{Binding GoToGamesMenuCommand}" Width="200" HorizontalContentAlignment="Center" Margin="0,20,0,0"/>
+            <TextBlock Text="{Binding StringFormat='Wynik: {0}/{1}', Path=CurrentScore}" HorizontalAlignment="Center" FontSize="18" FontWeight="Bold"/>
+            <Button Content="Wyjdź do Menu" Command="{Binding GoToGamesMenuCommand}" Width="200" HorizontalContentAlignment="Center"/>
         </StackPanel>
 
+        <ScrollViewer IsVisible="{Binding IsHistoryVisible}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Spacing="10" Margin="20">
+                <TextBlock Text="{Binding StringFormat='Gracz {0}', Path=CurrentPlayerId}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                
+                <TextBlock Text="HIGHER LOWER" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                <ItemsControl ItemsSource="{Binding CurrentHlResults}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="GRA 2" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                <ItemsControl ItemsSource="{Binding CurrentGame2Results}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="GRA 3" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                <ItemsControl ItemsSource="{Binding CurrentGame3Results}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Button Content="Wróć do Lobby" Command="{Binding GoToGamesMenuCommand}" Width="200" HorizontalContentAlignment="Center" Margin="0,20,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>

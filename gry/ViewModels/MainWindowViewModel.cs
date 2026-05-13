@@ -1,15 +1,14 @@
-﻿using Avalonia.Remote.Protocol.Viewport;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace gry.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    // --- WIDOCZNOŚĆ PANELI (Nawigacja) ---
     [ObservableProperty] private bool _isStartMenuVisible = true;
     [ObservableProperty] private bool _isAddPlayerVisible = false;
     [ObservableProperty] private bool _isLoginVisible = false;
@@ -17,17 +16,21 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isHlMenuVisible = false;
     [ObservableProperty] private bool _isHlInfoVisible = false;
     [ObservableProperty] private bool _isHlGameVisible = false;
+    [ObservableProperty] private bool _isHistoryVisible = false;
 
-    // --- DANE GRACZY I LOGOWANIE ---
     private HashSet<string> _registeredPlayers = new();
-    private Dictionary<string, string> _playerStats = new();
+    private Dictionary<string, List<string>> _hlHistory = new();
+    private Dictionary<string, List<string>> _game2History = new();
+    private Dictionary<string, List<string>> _game3History = new();
 
     [ObservableProperty] private string _inputPlayerId = "";
     [ObservableProperty] private string _errorMessage = "";
     [ObservableProperty] private string _currentPlayerId = "";
-    [ObservableProperty] private string _lobbyStats = "Zaloguj się, aby zagrać.";
 
-    // --- DANE GRY HIGHER/LOWER ---
+    [ObservableProperty] private ObservableCollection<string> _currentHlResults = new();
+    [ObservableProperty] private ObservableCollection<string> _currentGame2Results = new();
+    [ObservableProperty] private ObservableCollection<string> _currentGame3Results = new();
+
     private List<Card> _deck = new();
     [ObservableProperty] private string _currentCardName = "";
     [ObservableProperty] private int _cardsLeft = 0;
@@ -36,7 +39,6 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _gameMessage = "";
     private Card? _currentCard;
 
-    // --- KOMENDY NAWIGACJI ---
     [RelayCommand]
     private void GoToAddPlayer() { HideAll(); IsAddPlayerVisible = true; ErrorMessage = ""; InputPlayerId = ""; }
 
@@ -44,14 +46,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void GoToLogin() { HideAll(); IsLoginVisible = true; ErrorMessage = ""; InputPlayerId = ""; }
 
     [RelayCommand]
-    private void GoToGamesMenu()
-    {
-        HideAll();
-        IsGamesMenuVisible = true;
-        LobbyStats = _playerStats.ContainsKey(CurrentPlayerId)
-            ? $"Gracz {CurrentPlayerId} Statystyki: {_playerStats[CurrentPlayerId]}"
-            : $"Gracz {CurrentPlayerId} Statystyki: Brak gier";
-    }
+    private void GoToGamesMenu() { HideAll(); IsGamesMenuVisible = true; }
 
     [RelayCommand]
     private void GoToStartMenu() { HideAll(); IsStartMenuVisible = true; CurrentPlayerId = ""; }
@@ -62,7 +57,17 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void GoToHlInfo() { HideAll(); IsHlInfoVisible = true; }
 
-    // --- KOMENDY AKCJI (LOGOWANIE / REJESTRACJA) ---
+    [RelayCommand]
+    private void GoToHistory()
+    {
+        HideAll();
+        IsHistoryVisible = true;
+
+        CurrentHlResults = new ObservableCollection<string>(_hlHistory.GetValueOrDefault(CurrentPlayerId, new List<string>()));
+        CurrentGame2Results = new ObservableCollection<string>(_game2History.GetValueOrDefault(CurrentPlayerId, new List<string>()));
+        CurrentGame3Results = new ObservableCollection<string>(_game3History.GetValueOrDefault(CurrentPlayerId, new List<string>()));
+    }
+
     [RelayCommand]
     private void RegisterPlayer()
     {
@@ -70,17 +75,14 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (_registeredPlayers.Add(InputPlayerId))
             {
+                _hlHistory[InputPlayerId] = new List<string>();
+                _game2History[InputPlayerId] = new List<string>();
+                _game3History[InputPlayerId] = new List<string>();
                 GoToStartMenu();
             }
-            else
-            {
-                ErrorMessage = "Gracz o takim ID już istnieje!";
-            }
+            else { ErrorMessage = "Gracz o takim ID już istnieje!"; }
         }
-        else
-        {
-            ErrorMessage = "ID musi składać się z 3 do 10 cyfr!";
-        }
+        else { ErrorMessage = "ID musi składać się z 3 do 10 cyfr!"; }
     }
 
     [RelayCommand]
@@ -91,13 +93,9 @@ public partial class MainWindowViewModel : ViewModelBase
             CurrentPlayerId = InputPlayerId;
             GoToGamesMenu();
         }
-        else
-        {
-            ErrorMessage = "Nie znaleziono gracza o takim ID!";
-        }
+        else { ErrorMessage = "Nie znaleziono gracza o takim ID!"; }
     }
 
-    // --- LOGIKA GRY HIGHER/LOWER ---
     [RelayCommand]
     private void StartGame()
     {
@@ -106,7 +104,6 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentScore = 0;
         TotalAttempts = 0;
         GameMessage = "Zgadnij: Następna karta będzie wyższa czy niższa?";
-
         InitializeDeck();
         DrawCard();
     }
@@ -120,31 +117,23 @@ public partial class MainWindowViewModel : ViewModelBase
     private void MakeGuess(bool guessHigher)
     {
         if (_deck.Count == 0) return;
-
         int oldCardValue = _currentCard!.Value;
         DrawCard();
         int newCardValue = _currentCard!.Value;
-
         TotalAttempts++;
 
-        if (oldCardValue == newCardValue)
-        {
-            GameMessage = "Remis! Gramy dalej.";
-        }
+        if (oldCardValue == newCardValue) { GameMessage = "Remis! Gramy dalej."; }
         else if ((guessHigher && newCardValue > oldCardValue) || (!guessHigher && newCardValue < oldCardValue))
         {
             CurrentScore++;
             GameMessage = "Dobrze! Punkt dla Ciebie.";
         }
-        else
-        {
-            GameMessage = "Źle! Brak punktu.";
-        }
+        else { GameMessage = "Źle! Brak punktu."; }
 
         if (_deck.Count == 0)
         {
             GameMessage = $"Koniec gry! Twój wynik: {CurrentScore}/{TotalAttempts}";
-            _playerStats[CurrentPlayerId] = $"{CurrentScore}/{TotalAttempts} pkt.";
+            _hlHistory[CurrentPlayerId].Add($"{CurrentScore}/{TotalAttempts}");
         }
     }
 
@@ -153,15 +142,10 @@ public partial class MainWindowViewModel : ViewModelBase
         _deck.Clear();
         string[] suits = { "♥", "♦", "♣", "♠" };
         string[] names = { "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jopek", "Dama", "Król", "As" };
-
         for (int s = 0; s < 4; s++)
         {
-            for (int n = 0; n < 13; n++)
-            {
-                _deck.Add(new Card { Name = $"{names[n]} {suits[s]}", Value = n + 2 });
-            }
+            for (int n = 0; n < 13; n++) { _deck.Add(new Card { Name = $"{names[n]} {suits[s]}", Value = n + 2 }); }
         }
-        // Tasowanie
         _deck = _deck.OrderBy(x => Guid.NewGuid()).ToList();
     }
 
@@ -176,7 +160,6 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    // --- POMOCNICZE ---
     private void HideAll()
     {
         IsStartMenuVisible = false;
@@ -186,10 +169,10 @@ public partial class MainWindowViewModel : ViewModelBase
         IsHlMenuVisible = false;
         IsHlInfoVisible = false;
         IsHlGameVisible = false;
+        IsHistoryVisible = false;
     }
 }
 
-// Klasa pomocnicza dla Karty (umieszczona na dole tego samego pliku dla wygody)
 public class Card
 {
     public string Name { get; set; } = "";
