@@ -266,7 +266,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return card;
     }
 
-    private int GetHandValue(List<Card> hand)
+    internal int GetHandValue(List<Card> hand)
     {
         int total = 0, aces = 0;
         foreach (var card in hand)
