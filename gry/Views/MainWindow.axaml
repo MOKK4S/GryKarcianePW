@@ -126,9 +126,21 @@
 
             <TextBlock Text="{Binding BjMessage}" HorizontalAlignment="Center" FontSize="14" Foreground="Orange" TextWrapping="Wrap" TextAlignment="Center"/>
 
-            <StackPanel Orientation="Horizontal" Spacing="15" HorizontalAlignment="Center">
-                <Button Content="Hit (Dobierz)" Command="{Binding BjHitCommand}" Width="130" HorizontalContentAlignment="Center" Background="ForestGreen" Foreground="White" IsEnabled="{Binding BjCanAct}"/>
-                <Button Content="Stand (Zostań)" Command="{Binding BjStandCommand}" Width="130" HorizontalContentAlignment="Center" Background="Firebrick" Foreground="White" IsEnabled="{Binding BjCanAct}"/>
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" IsVisible="{Binding BjIsNotRevealing}">
+                <Button Content="Hit (Dobierz)" Command="{Binding BjHitCommand}" Width="120" HorizontalContentAlignment="Center" Background="ForestGreen" Foreground="White" IsEnabled="{Binding BjCanAct}"/>
+                <Button Content="Stand (Zostań)" Command="{Binding BjStandCommand}" Width="120" HorizontalContentAlignment="Center" Background="Firebrick" Foreground="White" IsEnabled="{Binding BjCanAct}"/>
+                <Button Content="Reveal 🎲" Command="{Binding BjRevealCommand}" Width="100" HorizontalContentAlignment="Center" Background="DarkViolet" Foreground="White" IsEnabled="{Binding BjCanAct}"/>
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding BjIsRevealing}" HorizontalAlignment="Center" Spacing="8">
+                <TextBlock Text="Odsłonięta karta:" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <Border Background="White" BorderBrush="Gold" BorderThickness="3" CornerRadius="10" Width="80" Height="110" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding BjRevealedCardName}" Foreground="Black" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="15" HorizontalAlignment="Center">
+                    <Button Content="Weź ✓" Command="{Binding BjTakeRevealedCommand}" Width="110" HorizontalContentAlignment="Center" Background="ForestGreen" Foreground="White"/>
+                    <Button Content="Pomiń ✗" Command="{Binding BjSkipRevealedCommand}" Width="110" HorizontalContentAlignment="Center" Background="DarkOrange" Foreground="White"/>
+                </StackPanel>
             </StackPanel>
 
             <Button Content="Zagraj ponownie" Command="{Binding StartBlackjackCommand}" Width="200" HorizontalContentAlignment="Center" Background="LightBlue" IsVisible="{Binding BjGameOver}"/>
