@@ -50,6 +50,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _bjMessage = "";
     [ObservableProperty] private bool _bjCanAct = false;
     [ObservableProperty] private bool _bjGameOver = false;
+    [ObservableProperty] private bool _bjIsRevealing = false;
+    [ObservableProperty] private string _bjRevealedCardName = "";
+    private Card? _bjRevealedCard;
+
+    public bool BjIsNotRevealing => !BjIsRevealing;
+    partial void OnBjIsRevealingChanged(bool value) => OnPropertyChanged(nameof(BjIsNotRevealing));
 
     [RelayCommand]
     private void GoToAddPlayer() { HideAll(); IsAddPlayerVisible = true; ErrorMessage = ""; InputPlayerId = ""; }
@@ -189,6 +195,9 @@ public partial class MainWindowViewModel : ViewModelBase
         _bjDealerHand.Add(DrawBjCard());
         BjGameOver = false;
         BjCanAct = true;
+        BjIsRevealing = false;
+        _bjRevealedCard = null;
+        BjRevealedCardName = "";
         UpdateBjDisplay(hideDealer: true);
         if (GetHandValue(_bjPlayerHand) == 21)
             BjStand();
@@ -223,6 +232,59 @@ public partial class MainWindowViewModel : ViewModelBase
         while (GetHandValue(_bjDealerHand) < 17)
             _bjDealerHand.Add(DrawBjCard());
         FinishBlackjack();
+    }
+
+    [RelayCommand]
+    private void BjReveal()
+    {
+        if (Random.Shared.Next(2) == 0)
+        {
+            BjCanAct = false;
+            BjGameOver = true;
+            UpdateBjDisplay(hideDealer: false);
+            int pv = GetHandValue(_bjPlayerHand);
+            int dv = GetHandValue(_bjDealerHand);
+            BjMessage = $"Pech! Przegrałeś natychmiast. (Ty: {pv}, Krupier: {dv})";
+            if (!_game2History.ContainsKey(CurrentPlayerId))
+                _game2History[CurrentPlayerId] = new List<string>();
+            _game2History[CurrentPlayerId].Add(BjMessage);
+        }
+        else
+        {
+            _bjRevealedCard = DrawBjCard();
+            BjRevealedCardName = _bjRevealedCard.Name;
+            BjIsRevealing = true;
+            BjMessage = $"Odsłonięta karta: {_bjRevealedCard.Name}. Wziąć czy pominąć?";
+        }
+    }
+
+    [RelayCommand]
+    private void BjTakeRevealed()
+    {
+        if (_bjRevealedCard == null) return;
+        _bjPlayerHand.Add(_bjRevealedCard);
+        _bjRevealedCard = null;
+        BjRevealedCardName = "";
+        BjIsRevealing = false;
+        int value = GetHandValue(_bjPlayerHand);
+        if (value > 21)
+            FinishBlackjack();
+        else if (value == 21)
+            BjStand();
+        else
+        {
+            UpdateBjDisplay(hideDealer: true);
+            BjMessage = "Hit (dobierz) czy Stand (zostań)?";
+        }
+    }
+
+    [RelayCommand]
+    private void BjSkipRevealed()
+    {
+        _bjRevealedCard = null;
+        BjRevealedCardName = "";
+        BjIsRevealing = false;
+        BjMessage = "Hit (dobierz) czy Stand (zostań)?";
     }
 
     private void FinishBlackjack()
@@ -278,7 +340,8 @@ public partial class MainWindowViewModel : ViewModelBase
         while (total > 21 && aces > 0) { total -= 10; aces--; }
         return total;
     }
-
+    
+/*blackjack reveal card button with 50% chance of revealing card and player with button can decide if he wants to hit it card and other 50% loses the game*/
     private void UpdateBjDisplay(bool hideDealer)
     {
         BjPlayerCards = new ObservableCollection<Card>(_bjPlayerHand);
