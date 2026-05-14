@@ -39,6 +39,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private int _currentScore = 0;
     [ObservableProperty] private int _totalAttempts = 0;
     [ObservableProperty] private string _gameMessage = "";
+    [ObservableProperty] private string _cheatMessage = ""; // Nowa właściwość
     private Card? _currentCard;
 
     private List<Card> _bjDeck = new();
@@ -119,8 +120,28 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentScore = 0;
         TotalAttempts = 0;
         GameMessage = "Zgadnij: Następna karta będzie wyższa czy niższa?";
+        CheatMessage = ""; // Resetowanie podpowiedzi przy starcie gry
         InitializeDeck();
         DrawCard();
+    }
+
+    // Dodana komenda do oszukiwania
+    [RelayCommand]
+    private void Cheat()
+    {
+        if (_deck.Count == 0) return;
+
+        bool success = Random.Shared.Next(0, 2) == 0;
+
+        if (success)
+        {
+            CheatMessage = $"Udało się! Następna karta to: {_deck[0].Name}";
+        }
+        else
+        {
+            CurrentScore--;
+            CheatMessage = "ZŁAPANY! Krupier to zauważył: -1 punkt.";
+        }
     }
 
     [RelayCommand]
@@ -136,6 +157,7 @@ public partial class MainWindowViewModel : ViewModelBase
         DrawCard();
         int newCardValue = _currentCard!.Value;
         TotalAttempts++;
+        CheatMessage = ""; // Resetowanie podpowiedzi po zgadnięciu
 
         if (oldCardValue == newCardValue) { GameMessage = "Remis! Gramy dalej."; }
         else if ((guessHigher && newCardValue > oldCardValue) || (!guessHigher && newCardValue < oldCardValue))

@@ -77,6 +77,12 @@
                 <Button Content="Wyższa ▲" Command="{Binding GuessHigherCommand}" Width="100" HorizontalContentAlignment="Center" Background="ForestGreen" Foreground="White" IsEnabled="{Binding CardsLeft}"/>
                 <Button Content="Niższa ▼" Command="{Binding GuessLowerCommand}" Width="100" HorizontalContentAlignment="Center" Background="Firebrick" Foreground="White" IsEnabled="{Binding CardsLeft}"/>
             </StackPanel>
+            
+            <StackPanel Spacing="10">
+                <Button Content="Podejrzyj kartę (50%)" Command="{Binding CheatCommand}" Width="220" HorizontalContentAlignment="Center" Background="Orange" Foreground="White" IsEnabled="{Binding CardsLeft}"/>
+                <TextBlock Text="{Binding CheatMessage}" Foreground="Orange" HorizontalAlignment="Center" FontWeight="Bold" TextWrapping="Wrap" MaxWidth="300" TextAlignment="Center"/>
+            </StackPanel>
+
             <TextBlock Text="{Binding StringFormat='Pozostało kart: {0}', Path=CardsLeft}" HorizontalAlignment="Center"/>
             <TextBlock Text="{Binding StringFormat='Wynik: {0}/{1}', Path=CurrentScore}" HorizontalAlignment="Center" FontSize="18" FontWeight="Bold"/>
             <Button Content="Wyjdź do Menu" Command="{Binding GoToGamesMenuCommand}" Width="200" HorizontalContentAlignment="Center"/>
