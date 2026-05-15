@@ -19,6 +19,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isHistoryVisible = false;
     [ObservableProperty] private bool _isBlackjackMenuVisible = false;
     [ObservableProperty] private bool _isBlackjackGameVisible = false;
+    [ObservableProperty] private bool _isPiotrusMenuVisible = false;
 
     private HashSet<string> _registeredPlayers = new();
     private Dictionary<string, List<string>> _hlHistory = new();
@@ -58,6 +59,26 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool BjIsNotRevealing => !BjIsRevealing;
     partial void OnBjIsRevealingChanged(bool value) => OnPropertyChanged(nameof(BjIsNotRevealing));
 
+    private List<Card> _ptDeck = new();
+    private List<Card> _ptPlayerHand = new();
+    private List<Card> _ptComputerHand = new();
+
+    private bool _ptIsPlayerTurn = true;
+
+    [ObservableProperty] private string _ptMessage = "Kliknij Graj, aby rozpocząć Piotrusia.";
+    [ObservableProperty] private string _ptTurnText = "";
+    [ObservableProperty] private bool _ptCanPlayTurn = false;
+    [ObservableProperty] private bool _ptGameOver = false;
+
+    [ObservableProperty] private ObservableCollection<Card> _ptPlayerCards = new();
+    [ObservableProperty] private ObservableCollection<Card> _ptComputerCards = new();
+
+    [ObservableProperty] private string _ptPlayerCardsCount = "0";
+    [ObservableProperty] private string _ptComputerCardsCount = "0";
+    [ObservableProperty] private bool _ptShowComputerCards = false;
+    [ObservableProperty] private string _ptComputerPreviewButtonText = "Podejrzyj karty";
+
+
     [RelayCommand]
     private void GoToAddPlayer() { HideAll(); IsAddPlayerVisible = true; ErrorMessage = ""; InputPlayerId = ""; }
 
@@ -78,6 +99,25 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoToBlackjackMenu() { HideAll(); IsBlackjackMenuVisible = true; }
+    [RelayCommand]
+    private void GoToPiotrusMenu()
+    {
+        HideAll();
+        IsPiotrusMenuVisible = true;
+
+        PtMessage = "Kliknij Graj, aby rozpocząć Piotrusia.";
+        PtTurnText = "";
+        PtCanPlayTurn = false;
+        PtGameOver = false;
+
+        PtShowComputerCards = false;
+        PtComputerPreviewButtonText = "Podejrzyj karty";
+
+        PtPlayerCards = new ObservableCollection<Card>();
+        PtComputerCards = new ObservableCollection<Card>();
+        PtPlayerCardsCount = "0";
+        PtComputerCardsCount = "0";
+    }
 
     [RelayCommand]
     private void GoToHistory()
@@ -201,6 +241,273 @@ public partial class MainWindowViewModel : ViewModelBase
             CurrentCardName = _currentCard.Name;
             CardsLeft = _deck.Count;
         }
+    }
+
+    [RelayCommand]
+    private void StartPiotrus()
+    {
+        HideAll();
+        IsPiotrusMenuVisible = true;
+
+        if (string.IsNullOrWhiteSpace(CurrentPlayerId))
+        {
+            PtMessage = "Najpierw zaloguj gracza.";
+            PtCanPlayTurn = false;
+            return;
+        }
+
+        _ptDeck = GeneratePiotrusDeck();
+        _ptPlayerHand.Clear();
+        _ptComputerHand.Clear();
+
+        for (int i = 0; i < _ptDeck.Count; i++)
+        {
+            if (i % 2 == 0)
+                _ptPlayerHand.Add(_ptDeck[i]);
+            else
+                _ptComputerHand.Add(_ptDeck[i]);
+        }
+
+        RemoveAllPiotrusPairs(_ptPlayerHand);
+        RemoveAllPiotrusPairs(_ptComputerHand);
+
+        _ptIsPlayerTurn = true;
+        PtCanPlayTurn = true;
+        PtGameOver = false;
+
+        PtShowComputerCards = false;
+        PtComputerPreviewButtonText = "Podejrzyj karty";
+
+        PtMessage = "Gra rozpoczęta. Pary początkowe zostały usunięte.";
+        PtTurnText = $"Tura gracza {CurrentPlayerId}. Kliknij „Wykonaj turę”.";
+
+        CheckPiotrusEnd();
+        UpdatePiotrusDisplay();
+    }
+    [RelayCommand]
+    private void PtPlayTurn()
+    {
+        if (!PtCanPlayTurn || PtGameOver)
+            return;
+
+        if (_ptPlayerHand.Count == 0 || _ptComputerHand.Count == 0)
+        {
+            FinishPiotrusGame();
+            UpdatePiotrusDisplay();
+            return;
+        }
+
+        if (_ptIsPlayerTurn)
+        {
+            Card drawnCard = DrawRandomCard(_ptComputerHand);
+            _ptPlayerHand.Add(drawnCard);
+
+            string pairInfo = RemoveOnePiotrusPairAfterDraw(_ptPlayerHand, drawnCard);
+
+            PtMessage = $"Gracz {CurrentPlayerId} dobrał kartę od komputera: {drawnCard.Name}. {pairInfo}";
+            _ptIsPlayerTurn = false;
+        }
+        else
+        {
+            Card drawnCard = DrawRandomCard(_ptPlayerHand);
+            _ptComputerHand.Add(drawnCard);
+
+            string pairInfo = RemoveOnePiotrusPairAfterDraw(_ptComputerHand, drawnCard);
+
+            PtMessage = $"Komputer dobrał jedną kartę od gracza {CurrentPlayerId}. {pairInfo}";
+            _ptIsPlayerTurn = true;
+        }
+
+        CheckPiotrusEnd();
+
+        if (!PtGameOver)
+        {
+            PtTurnText = _ptIsPlayerTurn
+                ? $"Tura gracza {CurrentPlayerId}."
+                : "Tura komputera.";
+        }
+
+        UpdatePiotrusDisplay();
+    }
+
+    [RelayCommand]
+    private void PtToggleComputerCards()
+    {
+        PtShowComputerCards = !PtShowComputerCards;
+
+        PtComputerPreviewButtonText = PtShowComputerCards
+            ? "Ukryj karty komputera"
+            : "Podejrzyj karty";
+
+        UpdatePiotrusDisplay();
+    }
+
+    private Card DrawRandomCard(List<Card> hand)
+    {
+        int index = Random.Shared.Next(hand.Count);
+        Card card = hand[index];
+        hand.RemoveAt(index);
+        return card;
+    }
+    private void CheckPiotrusEnd()
+    {
+        if (_ptPlayerHand.Count == 0 || _ptComputerHand.Count == 0)
+        {
+            FinishPiotrusGame();
+        }
+    }
+    private void FinishPiotrusGame()
+    {
+        PtCanPlayTurn = false;
+        PtGameOver = true;
+
+        string result;
+
+        if (_ptPlayerHand.Count == 0)
+        {
+            result = $"Piotruś: wygrałeś. Komputer został z Piotrusiem.";
+        }
+        else
+        {
+            result = $"Piotruś: przegrałeś. Zostałeś z Piotrusiem. Wygrał komputer.";
+        }
+
+        PtMessage = result;
+        PtTurnText = "Koniec gry.";
+
+        if (!_game3History.ContainsKey(CurrentPlayerId))
+            _game3History[CurrentPlayerId] = new List<string>();
+
+        _game3History[CurrentPlayerId].Add(result);
+    }
+    private void UpdatePiotrusDisplay()
+    {
+        PtPlayerCards = new ObservableCollection<Card>(
+            _ptPlayerHand
+                .OrderBy(card => card.Value)
+                .ThenBy(card => card.Name)
+        );
+
+        if (PtGameOver || PtShowComputerCards)
+        {
+            PtComputerCards = new ObservableCollection<Card>(
+                _ptComputerHand
+                    .OrderBy(card => card.Value)
+                    .ThenBy(card => card.Name)
+            );
+        }
+        else
+        {
+            PtComputerCards = new ObservableCollection<Card>(
+                _ptComputerHand.Select(card => new Card
+                {
+                    Name = "???",
+                    Value = 0
+                })
+            );
+        }
+
+        PtPlayerCardsCount = _ptPlayerHand.Count.ToString();
+        PtComputerCardsCount = _ptComputerHand.Count.ToString();
+    }
+    private List<Card> GeneratePiotrusDeck()
+    {
+        List<Card> deck = new();
+
+        string[] suits = { "♥", "♦", "♣", "♠" };
+        string[] names = { "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jopek", "Dama", "Król", "As" };
+
+        for (int s = 0; s < suits.Length; s++)
+        {
+            for (int n = 0; n < names.Length; n++)
+            {
+                deck.Add(new Card
+                {
+                    Name = $"{names[n]} {suits[s]}",
+                    Value = n + 2
+                });
+            }
+        }
+
+        Card? removedQueen = deck.FirstOrDefault(card => card.Name == "Dama ♣");
+
+        if (removedQueen is not null)
+        {
+            deck.Remove(removedQueen);
+        }
+
+        return deck.OrderBy(_ => Guid.NewGuid()).ToList();
+    }
+    private void RemoveAllPiotrusPairs(List<Card> hand)
+    {
+        bool removedPair;
+
+        do
+        {
+            removedPair = false;
+
+            for (int i = 0; i < hand.Count; i++)
+            {
+                for (int j = i + 1; j < hand.Count; j++)
+                {
+                    if (hand[i].Value == hand[j].Value)
+                    {
+                        hand.RemoveAt(j);
+                        hand.RemoveAt(i);
+                        removedPair = true;
+                        break;
+                    }
+                }
+
+                if (removedPair)
+                    break;
+            }
+        }
+        while (removedPair);
+    }
+    private string RemoveOnePiotrusPairAfterDraw(List<Card> hand, Card drawnCard)
+    {
+        int drawnCardIndex = hand.LastIndexOf(drawnCard);
+
+        if (drawnCardIndex == -1)
+            return "Nie znaleziono dobranej karty.";
+
+        for (int i = 0; i < hand.Count; i++)
+        {
+            if (i == drawnCardIndex)
+                continue;
+
+            if (hand[i].Value == drawnCard.Value)
+            {
+                Card pairedCard = hand[i];
+
+                int firstIndex = Math.Max(i, drawnCardIndex);
+                int secondIndex = Math.Min(i, drawnCardIndex);
+
+                hand.RemoveAt(firstIndex);
+                hand.RemoveAt(secondIndex);
+
+                return $"Powstała para: {drawnCard.Name} + {pairedCard.Name}. Para została usunięta.";
+            }
+        }
+
+        return "Nie powstała para.";
+    }
+    private int FindNextPiotrusPlayerWithCards(
+    List<string> players,
+    Dictionary<string, List<Card>> hands,
+    int fromIndex)
+    {
+        for (int offset = 1; offset <= players.Count; offset++)
+        {
+            int index = (fromIndex + offset) % players.Count;
+            string playerId = players[index];
+
+            if (hands[playerId].Count > 0)
+                return index;
+        }
+
+        return -1;
     }
 
     [RelayCommand]
@@ -386,6 +693,7 @@ public partial class MainWindowViewModel : ViewModelBase
         IsHistoryVisible = false;
         IsBlackjackMenuVisible = false;
         IsBlackjackGameVisible = false;
+        IsPiotrusMenuVisible = false;
     }
 }
 
